@@ -1,49 +1,78 @@
 use bevy::prelude::*;
 
-#[derive(Resource)]
-struct GreetTimer(Timer);
+
+const RECT1_COLOR: Color = Color::srgb(1., 0., 0.);
+const RECT2_COLOR: Color = Color::srgb(0., 0., 1.);
 
 #[derive(Component)]
-struct Person;
+struct Rect1;
 
 #[derive(Component)]
-struct Name(String);
-
-pub struct HelloPlugin;
-
-impl Plugin for HelloPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(GreetTimer(Timer::from_seconds(2.0, TimerMode::Repeating)));
-        app.add_systems(Startup, add_people);
-        app.add_systems(Update, (update_name, greet_people).chain());
-    }
-}
+struct Rect2;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, HelloPlugin))
+        .add_plugins(DefaultPlugins)
+        .add_systems(Startup, setup)
+        .add_systems(Update, (move_rect1, move_rect2))
         .run();
 }
 
-fn add_people(mut commands: Commands) {
-    commands.spawn((Person, Name("David Tenant".to_string())));
-    commands.spawn((Person, Name("Matt Smith".to_string())));
-    commands.spawn((Person, Name("Peter Capaldi".to_string())));
+// Startup system to setup the scene and spawn all relevant entities.
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    commands.spawn(Camera2d);
+
+    commands.spawn((
+        Mesh2d(meshes.add(Rectangle::default())),
+        MeshMaterial2d(materials.add(RECT1_COLOR)),
+        Transform::from_translation(Vec3::from((0., 0., 1.))).with_scale(Vec3::splat(128.)),
+        Rect1,
+    ));
+
+    commands.spawn((
+        Mesh2d(meshes.add(Rectangle::default())),
+        MeshMaterial2d(materials.add(RECT2_COLOR)),
+        Transform::from_translation(Vec3::from((200., 0., 0.))).with_scale(Vec3::splat(128.)),
+        Rect2,
+    ));
 }
 
-fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Name, With<Person>>) {
-    if timer.0.tick(time.delta()).just_finished(){
-        for name in &query{
-            println!("Hello, {}!", name.0);
-        }
+fn move_rect1(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut transform: Single<&mut Transform, With<Rect1>>,
+    time: Res<Time>,
+){
+    let mut direction = 0.0;
+
+    if keyboard_input.pressed(KeyCode::KeyA){
+        direction -= 1.0;
     }
+
+    if keyboard_input.pressed(KeyCode::KeyD){
+        direction += 1.0;
+    }
+
+    transform.translation.x += direction * 500. * time.delta_secs();
 }
 
-fn update_name(mut query: Query<&mut Name, With<Person>>) {
-    for mut name in &mut query{
-        if name.0 == "David Tenant"{
-            name.0 = "Dave Tents".to_string();
-            break;
-        }
+fn move_rect2(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut transform: Single<&mut Transform, With<Rect2>>,
+    time: Res<Time>,
+){
+    let mut direction = 0.0;
+
+    if keyboard_input.pressed(KeyCode::ArrowLeft){
+        direction -= 1.0;
     }
+
+    if keyboard_input.pressed(KeyCode::ArrowRight){
+        direction += 1.0;
+    }
+
+    transform.translation.x += direction * 500. * time.delta_secs();
 }
