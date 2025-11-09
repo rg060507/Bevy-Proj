@@ -78,8 +78,6 @@ fn move_rect2(
 
     transform.translation.x += direction * RECT_SPEED * time.delta_secs();
 }
-
-//Checks for any collisions between rect1 and rect2 entities
 fn check_for_collisions(
     rect1: Single<&mut Transform, With<Rect1>>,
     rect2: Single<&mut Transform, (With<Rect2>, Without<Rect1>)>,) {
